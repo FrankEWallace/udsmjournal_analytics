@@ -1,6 +1,6 @@
 import { BookOpen, Download, FileText, GitBranch, Quote, TrendingUp, ExternalLink } from "lucide-react";
 import KpiCard from "@/components/dashboard/KpiCard";
-import WorldMap from "@/components/dashboard/WorldMap";
+import InteractiveWorldMap from "@/components/dashboard/InteractiveWorldMap";
 import CitationChart from "@/components/dashboard/CitationChart";
 import CitationTimeline from "@/components/dashboard/CitationTimeline";
 import { getAggregatedStats } from "@/lib/mock-data";
@@ -30,7 +30,7 @@ const Dashboard = () => {
       </div>
 
       {/* World Map */}
-      <WorldMap />
+      <InteractiveWorldMap />
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
