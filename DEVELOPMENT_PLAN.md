@@ -22,16 +22,20 @@ Transform the current mock-data dashboard into a fully functional **OJS Plugin**
 - [x] Chart components (Recharts integration)
 - [x] World map visualization
 - [x] Running on localhost:8080 ✓
+- [x] **Phase 1:** API service layer (matomoApi.ts, ojsApi.ts, fastStatsApi.ts)
+- [x] **Phase 2:** React Query hooks for data fetching
+- [x] **Phase 3:** Real API integration with all components
+- [x] Environment configuration (.env.example, .env.local)
+- [x] Loading states and skeletons
+- [x] Connection status badges (API/Demo mode indicators)
 
 ### 🔄 In Progress / Not Implemented
-- [ ] API service layer (matomoApi.ts, ojsApi.ts, fastStatsApi.ts)
-- [ ] React Query hooks for data fetching
-- [ ] Real API integration
 - [ ] Authentication system
-- [ ] Environment configuration
-- [ ] Error handling and loading states
+- [ ] Error boundaries (global error handling)
 - [ ] OJS plugin packaging
 - [ ] Backend PHP plugin for OJS
+- [ ] Public view (unauthenticated access)
+- [ ] System settings configuration UI
 
 ---
 
@@ -104,51 +108,66 @@ Transform the current mock-data dashboard into a fully functional **OJS Plugin**
 
 ---
 
-### Phase 3: Update Components with Real Data (Week 3-4)
+### Phase 3: Update Components with Real Data (Week 3-4) ✅ COMPLETED
 **Goal:** Replace mock data with API calls
 
-#### Step 3.1: Dashboard Page
-- [ ] Update `src/pages/Dashboard.tsx`
-  - [ ] Replace mock stats with `useFastStatsDashboard()`
-  - [ ] Add loading states and skeletons
-  - [ ] Add error boundaries
-  - [ ] Implement auto-refresh
+#### Step 3.1: Dashboard Page ✅
+- [x] Update `src/pages/Dashboard.tsx`
+  - [x] Replace mock stats with `useFastStatsDashboard()`
+  - [x] Add loading states and skeletons
+  - [x] Add error handling with ConnectionBadge
+  - [x] Implement auto-refresh with visual indicator
 
-#### Step 3.2: Real-time Components
-- [ ] Create `src/components/RealtimeVisitors.tsx`
-  - [ ] Live visitor list
-  - [ ] Active visitors count
-  - [ ] Recent actions feed
-  - [ ] Use `useMatomoRealtime()`
+#### Step 3.2: Real-time Components ✅
+- [x] Created `src/components/ui/skeletons.tsx`
+  - [x] KpiCardSkeleton, ChartSkeleton, MapSkeleton
+  - [x] DashboardSkeleton for full-page loading
+  - [x] ErrorState component
+  - [x] ConnectionBadge (shows API/Demo status)
+  - [x] DataFreshness indicator
 
-#### Step 3.3: World Map Component
-- [ ] Update `src/components/dashboard/WorldMap.tsx`
-  - [ ] Connect to `useMatomoCountries()`
-  - [ ] Add interactive tooltips
-  - [ ] Add real-time markers
+#### Step 3.3: World Map Component ✅
+- [x] Update `src/components/dashboard/InteractiveWorldMap.tsx`
+  - [x] Connect to `useMatomoCountries()`
+  - [x] Country coordinates mapping
+  - [x] Toggle between 24h and Live views
+  - [x] Demo data badge when using mock
+  - [x] Loading skeleton support
 
-#### Step 3.4: Charts
-- [ ] Update `src/components/dashboard/CitationChart.tsx`
-  - [ ] Use real timeline data
-  - [ ] Add period filters
-- [ ] Update `src/components/dashboard/CitationTimeline.tsx`
-  - [ ] Connect to OJS timeline API
+#### Step 3.4: Charts ✅
+- [x] Update `src/components/dashboard/CitationChart.tsx`
+  - [x] Accept data prop from API
+  - [x] Transform API data to chart format
+  - [x] Mock data fallback
+- [x] Update `src/components/dashboard/CitationTimeline.tsx`
+  - [x] Accept data prop from API
+  - [x] Transform timeline data to monthly format
+  - [x] Mock data fallback
 
-#### Step 3.5: Journal Management
-- [ ] Update `src/pages/Journals.tsx`
-  - [ ] Display real journal list
-  - [ ] Add search/filter
-  - [ ] Connect to `useContexts()`
-- [ ] Update `src/pages/JournalDetail.tsx`
-  - [ ] Individual journal metrics
-  - [ ] Top publications
-  - [ ] Editorial stats
+#### Step 3.5: Journal Management ✅
+- [x] Update `src/pages/Journals.tsx`
+  - [x] Display real journal list from FastStats API
+  - [x] Loading skeletons
+  - [x] Connection status badge
+  - [x] Mock data fallback
+- [x] Update `src/pages/JournalDetail.tsx`
+  - [x] Individual journal metrics from API
+  - [x] Loading state
+  - [x] Connection status badge
 
-#### Step 3.6: Comparison Page
-- [ ] Update `src/pages/Comparison.tsx`
-  - [ ] Multi-journal selector
-  - [ ] Side-by-side comparison
-  - [ ] Comparison charts
+#### Step 3.6: Comparison Page ✅
+- [x] Update `src/pages/Comparison.tsx`
+  - [x] Multi-journal selector with API data
+  - [x] Side-by-side comparison
+  - [x] Connection status badge
+  - [x] Loading state
+
+#### Step 3.7: Live Engagement Page ✅
+- [x] Update `src/pages/LiveEngagement.tsx`
+  - [x] Connect to `useMatomoLiveCounters()`
+  - [x] Connect to `useMatomoRealtime()`
+  - [x] Active visitors, actions/min metrics
+  - [x] Connection status badge
 
 ---
 

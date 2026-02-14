@@ -2,16 +2,39 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { journals } from "@/lib/mock-data";
+import type { FastStatsPublicationWithStats } from "@/types/fastStats";
 
-const chartData = journals.slice(0, 8).map((j) => ({
+interface CitationChartProps {
+  data?: FastStatsPublicationWithStats[];
+}
+
+// Transform API data to chart format
+const transformApiData = (publications: FastStatsPublicationWithStats[]) => {
+  return publications.slice(0, 8).map((pub, index) => ({
+    name: pub.title.slice(0, 15) + (pub.title.length > 15 ? "..." : ""),
+    internal: pub.abstractViews || 0,
+    external: pub.fileDownloads || 0,
+    id: pub.submissionId || index + 1,
+    fullTitle: pub.title,
+  }));
+};
+
+// Mock data fallback
+const mockChartData = journals.slice(0, 8).map((j) => ({
   name: j.abbr,
   internal: j.internalCitations,
   external: j.externalCitations,
   id: j.id,
+  fullTitle: j.name,
 }));
 
-const CitationChart = () => {
+const CitationChart = ({ data }: CitationChartProps) => {
   const navigate = useNavigate();
+  
+  // Use API data if available, otherwise use mock
+  const chartData = data && data.length > 0 
+    ? transformApiData(data) 
+    : mockChartData;
 
   return (
     <motion.div

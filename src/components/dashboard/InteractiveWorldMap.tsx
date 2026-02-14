@@ -1,7 +1,32 @@
-import { useState, memo } from "react";
+import { useState, memo, useMemo } from "react";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import { motion } from "framer-motion";
 import { countryData } from "@/lib/mock-data";
+import { useMatomoCountries } from "@/hooks/useMatomoData";
+import { MapSkeleton } from "@/components/ui/skeletons";
+
+// Country coordinates lookup for Matomo data
+const countryCoordinates: Record<string, { lat: number; lng: number }> = {
+  TZ: { lat: -6.37, lng: 34.89 },
+  KE: { lat: -0.02, lng: 37.91 },
+  US: { lat: 37.09, lng: -95.71 },
+  GB: { lat: 55.38, lng: -3.44 },
+  ZA: { lat: -30.56, lng: 22.94 },
+  NG: { lat: 9.08, lng: 8.68 },
+  IN: { lat: 20.59, lng: 78.96 },
+  DE: { lat: 51.17, lng: 10.45 },
+  UG: { lat: 1.37, lng: 32.29 },
+  ET: { lat: 9.15, lng: 40.49 },
+  CA: { lat: 56.13, lng: -106.35 },
+  AU: { lat: -25.27, lng: 133.78 },
+  FR: { lat: 46.23, lng: 2.21 },
+  CN: { lat: 35.86, lng: 104.20 },
+  BR: { lat: -14.24, lng: -51.93 },
+  RW: { lat: -1.94, lng: 29.87 },
+  MW: { lat: -13.25, lng: 34.30 },
+  ZM: { lat: -13.13, lng: 27.85 },
+  // Add more as needed
+};
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -15,7 +40,36 @@ interface InteractiveWorldMapProps {
 const InteractiveWorldMap = memo(({ title = "Global Reader Engagement", subtitle = "Download distribution by country", showToggle = true, animated = false }: InteractiveWorldMapProps) => {
   const [activeToggle, setActiveToggle] = useState<"24h" | "live">("24h");
   const [tooltip, setTooltip] = useState<{ x: number; y: number; content: string } | null>(null);
-  const maxDownloads = Math.max(...countryData.map((c) => c.downloads));
+  
+  // Fetch real data from Matomo
+  const { data: matomoCountries, isLoading, isRefetching } = useMatomoCountries(
+    activeToggle === "live" ? "day" : "day",
+    activeToggle === "live" ? "today" : "yesterday"
+  );
+  
+  // Transform Matomo data to map format, fallback to mock data
+  const mapData = useMemo(() => {
+    if (matomoCountries && matomoCountries.length > 0) {
+      return matomoCountries
+        .filter(c => c.code && countryCoordinates[c.code.toUpperCase()])
+        .map(c => ({
+          country: c.label,
+          code: c.code.toUpperCase(),
+          downloads: c.nb_visits,
+          lat: countryCoordinates[c.code.toUpperCase()].lat,
+          lng: countryCoordinates[c.code.toUpperCase()].lng,
+        }));
+    }
+    return countryData; // Mock fallback
+  }, [matomoCountries]);
+  
+  const maxDownloads = Math.max(...mapData.map((c) => c.downloads), 1);
+
+  if (isLoading) {
+    return <MapSkeleton />;
+  }
+
+  const isUsingMockData = !matomoCountries || matomoCountries.length === 0;
 
   return (
     <motion.div
@@ -26,8 +80,18 @@ const InteractiveWorldMap = memo(({ title = "Global Reader Engagement", subtitle
     >
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold font-heading text-foreground">{title}</h3>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+          <h3 className="text-lg font-semibold font-heading text-foreground flex items-center gap-2">
+            {title}
+            {isRefetching && (
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" title="Refreshing..." />
+            )}
+          </h3>
+          <p className="text-xs text-muted-foreground flex items-center gap-2">
+            {subtitle}
+            {isUsingMockData && (
+              <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Demo Data</span>
+            )}
+          </p>
         </div>
         {showToggle && (
           <div className="flex items-center gap-1 rounded-lg bg-secondary p-1">
@@ -74,7 +138,7 @@ const InteractiveWorldMap = memo(({ title = "Global Reader Engagement", subtitle
               }
             </Geographies>
 
-            {countryData.map((c) => {
+            {mapData.map((c) => {
               const intensity = c.downloads / maxDownloads;
               const radius = 4 + intensity * 14;
               return (
@@ -92,7 +156,7 @@ const InteractiveWorldMap = memo(({ title = "Global Reader Engagement", subtitle
                         setTooltip({
                           x: e.clientX - rect.left,
                           y: e.clientY - rect.top - 10,
-                          content: `${c.country}: ${c.downloads.toLocaleString()} downloads`,
+                          content: `${c.country}: ${c.downloads.toLocaleString()} visits`,
                         });
                       }
                     }}

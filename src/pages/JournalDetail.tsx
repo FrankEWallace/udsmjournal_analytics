@@ -1,17 +1,52 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Download, GitBranch, ExternalLink, Quote, TrendingUp } from "lucide-react";
+import { ArrowLeft, BookOpen, Download, GitBranch, ExternalLink, Quote, TrendingUp, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import KpiCard from "@/components/dashboard/KpiCard";
 import { journals, topArticles, citationTimeline } from "@/lib/mock-data";
+import { useFastStatsDashboard } from "@/hooks/useOJSData";
+import { KpiCardSkeleton, ConnectionBadge } from "@/components/ui/skeletons";
 
 const JournalDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const journal = journals.find((j) => j.id === Number(id));
+  
+  // Fetch API data
+  const { data: dashboardData, isLoading, isRefetching, error } = useFastStatsDashboard();
+  
+  // Try to find journal from API data first, then fall back to mock
+  const apiJournal = dashboardData?.journals?.find((j) => j.path === id || j.id === Number(id));
+  const mockJournal = journals.find((j) => j.id === Number(id) || j.name.toLowerCase().includes(id?.toLowerCase() || ''));
+  
+  const isUsingMockData = !apiJournal;
+  
+  // Normalize journal data
+  const journal = apiJournal 
+    ? {
+        id: apiJournal.id,
+        name: apiJournal.name,
+        abbr: apiJournal.acronym || apiJournal.path?.toUpperCase().slice(0, 4) || 'JNL',
+        papers: apiJournal.publishedArticles || 0,
+        downloads: (apiJournal.totalAbstractViews || 0) + (apiJournal.totalFileDownloads || 0),
+        internalCitations: 0,
+        externalCitations: 0,
+        growth: 0,
+      }
+    : mockJournal;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => <KpiCardSkeleton key={i} />)}
+        </div>
+      </div>
+    );
+  }
 
   if (!journal) {
     return <div className="text-center py-12 text-muted-foreground">Journal not found</div>;
@@ -21,14 +56,23 @@ const JournalDetail = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/journals")} className="h-8 w-8">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold font-heading text-foreground">{journal.name}</h1>
-          <p className="text-sm text-muted-foreground">{journal.abbr} · Detailed Analytics</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/journals")} className="h-8 w-8">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold font-heading text-foreground flex items-center gap-2">
+              {journal.name}
+              {isRefetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
+            </h1>
+            <p className="text-sm text-muted-foreground">{journal.abbr} · Detailed Analytics</p>
+          </div>
         </div>
+        <ConnectionBadge 
+          connected={!error && !isUsingMockData} 
+          label={isUsingMockData ? "Demo Data" : "Live Data"} 
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

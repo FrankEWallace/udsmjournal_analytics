@@ -1,47 +1,98 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { journals } from "@/lib/mock-data";
+import { useFastStatsDashboard } from "@/hooks/useOJSData";
+import { ChartSkeleton, ConnectionBadge } from "@/components/ui/skeletons";
+import { RefreshCw } from "lucide-react";
 
 const Comparison = () => {
-  const [journalA, setJournalA] = useState(journals[0].id.toString());
-  const [journalB, setJournalB] = useState(journals[1].id.toString());
+  // Fetch API data
+  const { data: dashboardData, isLoading, isRefetching, error } = useFastStatsDashboard();
+  
+  // Transform API journals or use mock data
+  const journalList = useMemo(() => {
+    if (dashboardData?.journals && dashboardData.journals.length > 0) {
+      return dashboardData.journals.map((j, idx) => ({
+        id: j.id || idx + 1,
+        name: j.name,
+        abbr: j.acronym || j.path?.toUpperCase().slice(0, 4) || `J${idx + 1}`,
+        papers: j.publishedArticles || 0,
+        downloads: (j.totalAbstractViews || 0) + (j.totalFileDownloads || 0),
+        internalCitations: 0,
+        externalCitations: 0,
+        growth: 0,
+      }));
+    }
+    return journals;
+  }, [dashboardData]);
+  
+  const isUsingMockData = !dashboardData?.journals || dashboardData.journals.length === 0;
+  
+  const [journalA, setJournalA] = useState<string>("");
+  const [journalB, setJournalB] = useState<string>("");
+  
+  // Set defaults when data loads
+  const effectiveJournalA = journalA || journalList[0]?.id.toString();
+  const effectiveJournalB = journalB || journalList[1]?.id.toString();
 
-  const a = journals.find((j) => j.id === Number(journalA))!;
-  const b = journals.find((j) => j.id === Number(journalB))!;
+  const a = journalList.find((j) => j.id.toString() === effectiveJournalA) || journalList[0];
+  const b = journalList.find((j) => j.id.toString() === effectiveJournalB) || journalList[1];
 
-  const compData = [
+  const compData = a && b ? [
     { metric: "Papers", [a.abbr]: a.papers, [b.abbr]: b.papers },
     { metric: "Downloads", [a.abbr]: a.downloads / 100, [b.abbr]: b.downloads / 100 },
     { metric: "Internal Cit.", [a.abbr]: a.internalCitations, [b.abbr]: b.internalCitations },
     { metric: "External Cit.", [a.abbr]: a.externalCitations, [b.abbr]: b.externalCitations },
     { metric: "Growth %", [a.abbr]: a.growth * 10, [b.abbr]: b.growth * 10 },
-  ];
+  ] : [];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+        <ChartSkeleton />
+      </div>
+    );
+  }
+
+  if (!a || !b) {
+    return <div className="text-center py-12 text-muted-foreground">Not enough journals to compare</div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold font-heading text-foreground">Journal Comparison</h1>
-        <p className="text-sm text-muted-foreground">Compare metrics between journals side-by-side</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold font-heading text-foreground flex items-center gap-2">
+            Journal Comparison
+            {isRefetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
+          </h1>
+          <p className="text-sm text-muted-foreground">Compare metrics between journals side-by-side</p>
+        </div>
+        <ConnectionBadge 
+          connected={!error && !isUsingMockData} 
+          label={isUsingMockData ? "Demo Data" : "Live Data"} 
+        />
       </div>
 
       <div className="flex flex-wrap gap-4">
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Journal A</label>
-          <Select value={journalA} onValueChange={setJournalA}>
+          <Select value={effectiveJournalA} onValueChange={setJournalA}>
             <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {journals.map((j) => <SelectItem key={j.id} value={j.id.toString()}>{j.name}</SelectItem>)}
+              {journalList.map((j) => <SelectItem key={j.id} value={j.id.toString()}>{j.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Journal B</label>
-          <Select value={journalB} onValueChange={setJournalB}>
+          <Select value={effectiveJournalB} onValueChange={setJournalB}>
             <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {journals.map((j) => <SelectItem key={j.id} value={j.id.toString()}>{j.name}</SelectItem>)}
+              {journalList.map((j) => <SelectItem key={j.id} value={j.id.toString()}>{j.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
