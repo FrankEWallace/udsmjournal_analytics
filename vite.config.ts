@@ -11,6 +11,22 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // API Proxies to avoid CORS issues during development
+    proxy: {
+      // OJS API proxy - routes to local MAMP OJS installation
+      '/index.php': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Matomo Analytics API proxy
+      '/matomo-api': {
+        target: 'https://matomo.themenumanager.xyz',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/matomo-api/, ''),
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
