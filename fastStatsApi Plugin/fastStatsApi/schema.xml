@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE schema SYSTEM "../../../lib/pkp/dtd/xmlSchema.dtd">
+
+<schema version="0.2">
+    <!--
+     * fast_stats_citation_counts
+     * Stores citation counts fetched from Crossref for publications with DOIs
+     -->
+    <table name="fast_stats_citation_counts">
+        <field name="citation_count_id" type="I8">
+            <AUTOINCREMENT />
+            <KEY />
+        </field>
+        <field name="publication_id" type="I8">
+            <NOTNULL />
+        </field>
+        <field name="doi" type="C2" size="255">
+            <NOTNULL />
+        </field>
+        <field name="citation_count" type="I4">
+            <NOTNULL />
+            <DEFAULT VALUE="0" />
+        </field>
+        <field name="last_updated" type="T">
+            <NOTNULL />
+        </field>
+        <field name="source" type="C2" size="50">
+            <NOTNULL />
+            <DEFAULT VALUE="crossref" />
+        </field>
+        <descr>Citation counts from external sources for publications with DOIs</descr>
+        <index name="fast_stats_citation_counts_pub_id">
+            <col>publication_id</col>
+        </index>
+        <index name="fast_stats_citation_counts_doi">
+            <col>doi</col>
+            <UNIQUE />
+        </index>
+    </table>
+</schema>

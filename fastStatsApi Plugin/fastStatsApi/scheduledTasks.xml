@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE schedule SYSTEM "../../../lib/pkp/dtd/scheduledTasks.dtd">
+<!--
+  - scheduledTasks.xml
+  - Scheduled tasks for Fast Statistics API Plugin
+  - These tasks can be run automatically via the acron plugin or via cron
+  -->
+<schedule>
+	<!-- Refresh statistics every hour -->
+	<task class="plugins.generic.fastStatsApi.tasks.FastStatsAggregationTask">
+		<frequency hour="*/1" />
+	</task>
+	
+	<!-- Fetch Crossref citations daily at 3 AM -->
+	<!-- Args: [0] = contact email for Crossref API, [1] = batch size -->
+	<task class="plugins.generic.fastStatsApi.classes.CrossrefCitationTask">
+		<frequency hour="3" />
+		<args>
+			<!-- Optional: Contact email for Crossref polite pool (recommended) -->
+			<!-- <arg></arg> -->
+			<!-- Optional: Batch size per run (default: 50) -->
+			<!-- <arg>50</arg> -->
+		</args>
+	</task>
+</schedule>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE locale SYSTEM "../../../../../lib/pkp/dtd/locale.dtd">
+<!--
+  - locale/en_US/locale.xml
+  - Fast Statistics API Plugin locale strings
+  -->
+<locale name="en_US" full_name="U.S. English">
+	<message key="plugins.generic.fastStatsApi.displayName">Fast Statistics API</message>
+	<message key="plugins.generic.fastStatsApi.description">Provides fast, pre-aggregated statistics API endpoints for analytics dashboards. This plugin creates optimized queries that return data instantly instead of calculating on-demand.</message>
+	<message key="plugins.generic.fastStatsApi.refreshStats">Refresh Statistics</message>
+	<message key="plugins.generic.fastStatsApi.statsRefreshed">Statistics have been refreshed successfully.</message>
+</locale>

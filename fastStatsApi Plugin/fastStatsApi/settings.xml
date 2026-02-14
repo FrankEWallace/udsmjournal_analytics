@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE site_settings SYSTEM "../../../lib/pkp/dtd/pluginSettings.dtd">
+<!--
+  - settings.xml
+  - Fast Statistics API Plugin default settings
+  -->
+<site_settings>
+</site_settings>

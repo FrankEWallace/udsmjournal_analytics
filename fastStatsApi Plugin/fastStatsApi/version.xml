@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE version SYSTEM "../../../lib/pkp/dtd/pluginVersion.dtd">
+<!--
+  - version.xml
+  - Fast Statistics API Plugin version descriptor
+  -->
+<version>
+	<application>fastStatsApi</application>
+	<type>plugins.generic</type>
+	<release>1.1.0.0</release>
+	<date>2026-02-14</date>
+	<lazy-load>1</lazy-load>
+	<class>FastStatsApiPlugin</class>
+</version>
