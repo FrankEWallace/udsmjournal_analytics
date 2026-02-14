@@ -5,7 +5,7 @@
  * from OJS REST API.
  */
 
-import { OJS_CONFIG, OJS_ENDPOINTS, getApiUrl, getAuthHeaders } from '@/config/ojs';
+import { OJS_CONFIG, OJS_ENDPOINTS, getApiUrl, getAuthHeaders, getApiTokenParam } from '@/config/ojs';
 import type {
   OJSContext,
   JournalInfo,
@@ -42,6 +42,12 @@ async function ojsFetch<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = new URL(getApiUrl(endpoint), window.location.origin);
+  
+  // Add apiToken query parameter for authentication
+  const tokenParam = getApiTokenParam();
+  Object.entries(tokenParam).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
+  });
   
   // Add query parameters
   Object.entries(params).forEach(([key, value]) => {

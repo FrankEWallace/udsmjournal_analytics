@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE locale SYSTEM "../../../lib/pkp/dtd/locale.dtd">
+<locale name="en_US" full_name="English">
+    <message key="plugins.generic.udsmGlobalReach.displayName">UDSM Global Reach Dashboard</message>
+    <message key="plugins.generic.udsmGlobalReach.description">Comprehensive analytics dashboard for UDSM journals featuring real-time engagement tracking, publication statistics, citation analysis, and geographic distribution visualization.</message>
+    <message key="plugins.generic.udsmGlobalReach.dashboard">Global Reach Analytics</message>
+    <message key="plugins.generic.udsmGlobalReach.settings">Dashboard Settings</message>
+    <message key="plugins.generic.udsmGlobalReach.settings.matomoUrl">Matomo Analytics URL</message>
+    <message key="plugins.generic.udsmGlobalReach.settings.matomoUrl.description">The URL of your Matomo analytics instance (e.g., https://matomo.example.com)</message>
+    <message key="plugins.generic.udsmGlobalReach.settings.matomoSiteId">Matomo Site ID</message>
+    <message key="plugins.generic.udsmGlobalReach.settings.matomoSiteId.description">The site ID assigned to your OJS installation in Matomo</message>
+    <message key="plugins.generic.udsmGlobalReach.settings.matomoToken">Matomo API Token</message>
+    <message key="plugins.generic.udsmGlobalReach.settings.matomoToken.description">Your Matomo API authentication token (keep this secret)</message>
+    <message key="plugins.generic.udsmGlobalReach.settings.saved">Settings saved successfully.</message>
+</locale>

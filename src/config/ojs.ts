@@ -76,8 +76,8 @@ export const OJS_CONFIG = {
  * OJS API endpoints
  */
 export const OJS_ENDPOINTS = {
-  // Context/Journal endpoints
-  contexts: '/_/contexts',
+  // Context/Journal endpoints (site-level, uses 'index' as context)
+  contexts: '/index/api/v1/contexts',
   
   // Statistics endpoints (per context)
   publicationStats: (context: string) => `/${context}/${OJS_CONFIG.apiVersion}/stats/publications`,
@@ -112,17 +112,23 @@ export function getApiUrl(endpoint: string): string {
 }
 
 /**
- * Get authorization headers
+ * Get authorization headers (without Bearer token - use apiToken query param instead)
  */
 export function getAuthHeaders(): HeadersInit {
-  const headers: HeadersInit = {
+  return {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
-  
+}
+
+/**
+ * Get API token query parameter
+ * OJS expects the JWT as an `apiToken` query parameter rather than
+ * Authorization header (Apache/MAMP often strips the Authorization header)
+ */
+export function getApiTokenParam(): Record<string, string> {
   if (OJS_CONFIG.auth.apiKey) {
-    headers['Authorization'] = `Bearer ${OJS_CONFIG.auth.apiKey}`;
+    return { apiToken: OJS_CONFIG.auth.apiKey };
   }
-  
-  return headers;
+  return {};
 }

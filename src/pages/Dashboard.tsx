@@ -1,56 +1,30 @@
-import { BookOpen, Download, FileText, GitBranch, Quote, TrendingUp, ExternalLink, Users, Clock, CheckCircle } from "lucide-react";
+import { BookOpen, Download, FileText, TrendingUp, Users, Clock, CheckCircle, Eye, RefreshCw } from "lucide-react";
 import KpiCard from "@/components/dashboard/KpiCard";
 import InteractiveWorldMap from "@/components/dashboard/InteractiveWorldMap";
 import CitationChart from "@/components/dashboard/CitationChart";
 import CitationTimeline from "@/components/dashboard/CitationTimeline";
+import TopArticlesTable from "@/components/dashboard/TopArticlesTable";
+import EditorialFunnel from "@/components/dashboard/EditorialFunnel";
 import { DashboardSkeleton, ErrorState, DataFreshness, ConnectionBadge } from "@/components/ui/skeletons";
-import { useFastStatsDashboard, useFastStatsConnection } from "@/hooks/useOJSData";
+import { useAllJournalsMetrics, useOJSConnection } from "@/hooks/useOJSData";
 import { useMatomoConnection } from "@/hooks/useMatomoData";
-import { getAggregatedStats } from "@/lib/mock-data";
 
 const Dashboard = () => {
-  // Fetch real data from Fast Stats API
+  // Fetch real data from OJS standard API (aggregated across all journals)
   const { 
-    data: apiData, 
+    data: metrics, 
     isLoading, 
     error, 
     refetch,
     isRefetching,
     dataUpdatedAt,
-  } = useFastStatsDashboard();
+  } = useAllJournalsMetrics();
   
   // Connection status checks
-  const { data: fastStatsConnection } = useFastStatsConnection();
+  const { data: ojsConnection } = useOJSConnection();
   const { data: matomoConnection } = useMatomoConnection();
   
-  // Use API data if available, otherwise fall back to mock data
-  const useMockData = !apiData || error;
-  const mockStats = getAggregatedStats();
-  
-  // Normalize data for display
-  const stats = useMockData ? {
-    totalJournals: mockStats.totalJournals,
-    totalPapers: mockStats.totalPapers,
-    totalDownloads: mockStats.totalDownloads,
-    totalCitations: mockStats.totalCitations,
-    totalInternal: mockStats.totalInternal,
-    totalExternal: mockStats.totalExternal,
-    avgGrowth: mockStats.avgGrowth,
-    totalUsers: 0,
-    acceptanceRate: 0,
-    avgDaysToDecision: 0,
-  } : {
-    totalJournals: apiData.journals?.length || 0,
-    totalPapers: apiData.totalPublications || 0,
-    totalDownloads: apiData.totalDownloads || 0,
-    totalCitations: apiData.totalCitations || 0,
-    totalInternal: Math.round((apiData.totalCitations || 0) * 0.6), // Estimate
-    totalExternal: Math.round((apiData.totalCitations || 0) * 0.4), // Estimate
-    avgGrowth: apiData.acceptanceRate || 0,
-    totalUsers: apiData.totalUsers || 0,
-    acceptanceRate: apiData.acceptanceRate || 0,
-    avgDaysToDecision: apiData.avgDaysToDecision || 0,
-  };
+  const isConnected = !!metrics && !error;
 
   // Show loading skeleton
   if (isLoading) {
@@ -64,10 +38,10 @@ const Dashboard = () => {
         <div>
           <h1 className="text-2xl font-bold font-heading text-foreground">System Overview</h1>
           <p className="text-sm text-muted-foreground">
-            {useMockData ? (
-              <span className="text-yellow-600">Using demo data · API not connected</span>
+            {isConnected ? (
+              <>Aggregated analytics across {metrics.contexts?.length || 0} UDSM journals</>
             ) : (
-              <>Aggregated analytics across all {stats.totalJournals} UDSM journals</>
+              <span className="text-yellow-600">Unable to connect to OJS API</span>
             )}
           </p>
         </div>
@@ -76,11 +50,19 @@ const Dashboard = () => {
             lastUpdated={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined} 
             isRefetching={isRefetching} 
           />
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3 w-3 ${isRefetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
           <div className="flex items-center gap-3">
             <ConnectionBadge 
-              connected={fastStatsConnection?.connected || false} 
+              connected={ojsConnection?.connected || false} 
               label="OJS" 
-              loading={!fastStatsConnection}
+              loading={!ojsConnection}
             />
             <ConnectionBadge 
               connected={matomoConnection?.connected || false} 
@@ -92,85 +74,140 @@ const Dashboard = () => {
       </div>
 
       {/* Error banner (non-blocking) */}
-      {error && !useMockData && (
+      {error && (
         <ErrorState 
           title="API Connection Issue"
-          message={error.message || "Unable to fetch live data. Showing cached data."}
+          message={error.message || "Unable to fetch live data from OJS API."}
           onRetry={() => refetch()}
         />
       )}
 
       {/* KPI Cards - Primary Metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard 
-          label="Total Journals" 
-          value={stats.totalJournals} 
-          icon={BookOpen} 
-          trend={4.0} 
-          delay={0} 
-        />
-        <KpiCard 
-          label="Published Papers" 
-          value={stats.totalPapers} 
-          icon={FileText} 
-          trend={8.2} 
-          delay={0.05} 
-        />
-        <KpiCard 
-          label="Total Downloads" 
-          value={stats.totalDownloads} 
-          icon={Download} 
-          trend={12.5} 
-          delay={0.1} 
-          accent 
-        />
-        <KpiCard 
-          label="Total Citations" 
-          value={stats.totalCitations} 
-          icon={Quote} 
-          trend={stats.avgGrowth} 
-          delay={0.15} 
-        />
-      </div>
+      {metrics && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard 
+              label="Total Journals" 
+              value={metrics.contexts?.length || 0} 
+              icon={BookOpen} 
+              delay={0} 
+            />
+            <KpiCard 
+              label="Published Articles" 
+              value={metrics.totalPublications} 
+              icon={FileText} 
+              delay={0.05} 
+            />
+            <KpiCard 
+              label="Abstract Views" 
+              value={metrics.totalAbstractViews} 
+              icon={Eye} 
+              delay={0.1} 
+              accent 
+            />
+            <KpiCard 
+              label="File Downloads" 
+              value={metrics.totalDownloads} 
+              icon={Download} 
+              delay={0.15} 
+              accent
+            />
+          </div>
 
-      {/* KPI Cards - Secondary Metrics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard 
-          label="Total Users" 
-          value={stats.totalUsers} 
-          icon={Users} 
-          delay={0.2} 
-        />
-        <KpiCard 
-          label="Acceptance Rate" 
-          value={`${stats.acceptanceRate}%`} 
-          icon={CheckCircle} 
-          delay={0.25}
-          accent 
-        />
-        <KpiCard 
-          label="Avg Days to Decision" 
-          value={stats.avgDaysToDecision} 
-          icon={Clock} 
-          delay={0.3} 
-        />
-        <KpiCard 
-          label="Citation Growth" 
-          value={`${stats.avgGrowth}%`} 
-          icon={TrendingUp} 
-          delay={0.35}
-          accent 
-        />
-      </div>
+          {/* KPI Cards - Editorial & User Metrics */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard 
+              label="Total Users" 
+              value={metrics.totalUsers} 
+              icon={Users} 
+              delay={0.2} 
+            />
+            <KpiCard 
+              label="Acceptance Rate" 
+              value={`${metrics.acceptanceRate}%`} 
+              icon={CheckCircle} 
+              delay={0.25}
+              accent 
+            />
+            <KpiCard 
+              label="Avg Days to Decision" 
+              value={metrics.daysToDecision} 
+              icon={Clock} 
+              delay={0.3} 
+            />
+            <KpiCard 
+              label="Submissions Received" 
+              value={metrics.submissionsReceived} 
+              icon={TrendingUp} 
+              delay={0.35}
+            />
+          </div>
 
-      {/* World Map - Uses Matomo data for real-time, mock for fallback */}
-      <InteractiveWorldMap />
+          {/* World Map - Matomo data */}
+          <InteractiveWorldMap />
 
-      {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <CitationChart data={apiData?.topPublications} />
-        <CitationTimeline data={apiData?.viewsTimeline} />
-      </div>
+          {/* Charts row: Top publications + Timeline */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <CitationChart data={metrics.topPublications} />
+            <CitationTimeline 
+              abstractData={metrics.abstractViewsTimeline} 
+              galleyData={metrics.galleyViewsTimeline} 
+            />
+          </div>
+
+          {/* Editorial Pipeline */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <EditorialFunnel
+              submissionsReceived={metrics.submissionsReceived}
+              submissionsAccepted={metrics.submissionsAccepted}
+              submissionsDeclined={metrics.submissionsDeclined}
+              submissionsInProgress={metrics.submissionsInProgress}
+              acceptanceRate={metrics.acceptanceRate}
+              rejectionRate={metrics.rejectionRate}
+              daysToDecision={metrics.daysToDecision}
+              daysToAccept={metrics.daysToAccept}
+              daysToReject={metrics.daysToReject}
+            />
+            {/* Journal breakdown placeholder - shows per-journal data */}
+            <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+              <h3 className="text-lg font-semibold font-heading text-foreground mb-4">Journals Overview</h3>
+              <p className="text-xs text-muted-foreground mb-4">Articles and views per journal</p>
+              <div className="space-y-3">
+                {metrics.contexts?.map((ctx) => {
+                  const ctxMetrics = metrics.perContextMetrics?.get(ctx.urlPath);
+                  return (
+                    <div key={ctx.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {ctx.name['en_US'] || ctx.name['en'] || Object.values(ctx.name)[0] || ctx.urlPath}
+                        </p>
+                        <p className="text-xs text-muted-foreground">/{ctx.urlPath}</p>
+                      </div>
+                      <div className="flex items-center gap-4 text-right">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Articles</p>
+                          <p className="text-sm font-bold font-mono">{ctxMetrics?.totalPublications?.toLocaleString() || '–'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Views</p>
+                          <p className="text-sm font-bold font-mono">{ctxMetrics?.totalAbstractViews?.toLocaleString() || '–'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Downloads</p>
+                          <p className="text-sm font-bold font-mono">{ctxMetrics?.totalDownloads?.toLocaleString() || '–'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Top Articles Table */}
+          <TopArticlesTable data={metrics.topPublications} maxItems={10} />
+        </>
+      )}
     </div>
   );
 };

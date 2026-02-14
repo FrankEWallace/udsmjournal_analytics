@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE version SYSTEM "../../../lib/pkp/dtd/pluginVersion.dtd">
+<!--
+  - version.xml
+  - UDSM Global Reach Dashboard Plugin
+  - Version information for OJS plugin
+  -->
+<version>
+    <application>udsmGlobalReach</application>
+    <type>plugins.generic</type>
+    <release>1.0.0.0</release>
+    <date>2026-02-14</date>
+    <lazy-load>1</lazy-load>
+    <class>UdsmGlobalReachPlugin</class>
+    
+    <compatibility application="ojs2">
+        <version>3.3.0.0</version>
+        <version>3.4.0.0</version>
+    </compatibility>
+    
+    <certification type="official"/>
+    <description>Global analytics dashboard for UDSM journals with real-time engagement tracking</description>
+</version>

@@ -1,12 +1,14 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "udsm-global-reach-dashboard",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Global Reach Analytics Dashboard for UDSM OJS Journals",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "deploy": "bash deploy.sh",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",

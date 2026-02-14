@@ -4,9 +4,13 @@
  * Provides optimized, pre-aggregated statistics from the custom
  * Fast Stats OJS plugin. This API returns dashboard data in 
  * single API calls instead of multiple requests.
+ * 
+ * When running inside OJS, uses the plugin's built-in API endpoints.
+ * When running standalone, uses Vite proxy to the OJS installation.
  */
 
-import { OJS_CONFIG, OJS_ENDPOINTS, getApiUrl, getAuthHeaders } from '@/config/ojs';
+import { OJS_CONFIG, OJS_ENDPOINTS, getAuthHeaders, getApiTokenParam } from '@/config/ojs';
+import { getAppContext, getApiUrl as getContextApiUrl } from '@/lib/ojs-context';
 import type {
   FastStatsDashboardResponse,
   FastStatsCountsResponse,
@@ -35,6 +39,23 @@ import type {
 // ============================================
 
 /**
+ * Build the correct API URL based on context
+ */
+function buildApiUrl(endpoint: string): string {
+  const context = getAppContext();
+  
+  if (context.isOJS) {
+    // Inside OJS plugin - use relative URL from plugin handler
+    return getContextApiUrl(endpoint);
+  }
+  
+  // Development mode - use Vite proxy
+  // The proxy will forward to OJS installation
+  const baseUrl = '/index.php/index/globalreach/api';
+  return `${baseUrl}/${endpoint}`;
+}
+
+/**
  * Fetch data from Fast Stats API
  */
 async function fastStatsFetch<T>(
@@ -42,7 +63,13 @@ async function fastStatsFetch<T>(
   params: Record<string, string | number | boolean | undefined> = {},
   options: RequestInit = {}
 ): Promise<T> {
-  const url = new URL(getApiUrl(endpoint), window.location.origin);
+  const url = new URL(buildApiUrl(endpoint), window.location.origin);
+  
+  // Add apiToken query parameter for authentication
+  const tokenParam = getApiTokenParam();
+  Object.entries(tokenParam).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
+  });
   
   // Add query parameters
   Object.entries(params).forEach(([key, value]) => {

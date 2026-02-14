@@ -1,40 +1,38 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { journals } from "@/lib/mock-data";
-import type { FastStatsPublicationWithStats } from "@/types/fastStats";
+import type { TopPublication } from "@/types/ojs";
 
 interface CitationChartProps {
-  data?: FastStatsPublicationWithStats[];
+  data?: TopPublication[];
 }
 
 // Transform API data to chart format
-const transformApiData = (publications: FastStatsPublicationWithStats[]) => {
-  return publications.slice(0, 8).map((pub, index) => ({
-    name: pub.title.slice(0, 15) + (pub.title.length > 15 ? "..." : ""),
-    internal: pub.abstractViews || 0,
-    external: pub.fileDownloads || 0,
-    id: pub.submissionId || index + 1,
+const transformApiData = (publications: TopPublication[]) => {
+  return publications.slice(0, 8).map((pub) => ({
+    name: pub.title.length > 20 ? pub.title.slice(0, 20) + "…" : pub.title,
+    abstractViews: pub.abstractViews || 0,
+    downloads: pub.galleyViews || 0,
+    id: pub.submissionId,
     fullTitle: pub.title,
+    authors: pub.authors,
   }));
 };
 
-// Mock data fallback
-const mockChartData = journals.slice(0, 8).map((j) => ({
-  name: j.abbr,
-  internal: j.internalCitations,
-  external: j.externalCitations,
-  id: j.id,
-  fullTitle: j.name,
-}));
-
 const CitationChart = ({ data }: CitationChartProps) => {
-  const navigate = useNavigate();
-  
-  // Use API data if available, otherwise use mock
-  const chartData = data && data.length > 0 
-    ? transformApiData(data) 
-    : mockChartData;
+  const chartData = data && data.length > 0 ? transformApiData(data) : [];
+
+  if (chartData.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="rounded-xl border border-border bg-card p-6 shadow-card flex items-center justify-center h-[400px]"
+      >
+        <p className="text-muted-foreground text-sm">No publication data available</p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -44,18 +42,14 @@ const CitationChart = ({ data }: CitationChartProps) => {
       className="rounded-xl border border-border bg-card p-6 shadow-card"
     >
       <div className="mb-4">
-        <h3 className="text-lg font-semibold font-heading text-foreground">Citation Distribution by Journal</h3>
-        <p className="text-xs text-muted-foreground">Internal vs External citations · Click a journal to drill down</p>
+        <h3 className="text-lg font-semibold font-heading text-foreground">Top Publications by Views</h3>
+        <p className="text-xs text-muted-foreground">Abstract views vs file downloads · Top 8 articles</p>
       </div>
 
       <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={chartData} onClick={(data) => {
-          if (data?.activePayload?.[0]?.payload?.id) {
-            navigate(`/journals/${data.activePayload[0].payload.id}`);
-          }
-        }}>
+        <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 20% 90%)" />
-          <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(213 15% 50%)" />
+          <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(213 15% 50%)" interval={0} angle={-15} textAnchor="end" height={60} />
           <YAxis tick={{ fontSize: 12 }} stroke="hsl(213 15% 50%)" />
           <Tooltip
             contentStyle={{
@@ -64,10 +58,14 @@ const CitationChart = ({ data }: CitationChartProps) => {
               borderRadius: "8px",
               fontSize: "12px",
             }}
+            labelFormatter={(_, payload) => {
+              const item = payload?.[0]?.payload;
+              return item ? `${item.fullTitle}\nby ${item.authors}` : '';
+            }}
           />
           <Legend wrapperStyle={{ fontSize: "12px" }} />
-          <Bar dataKey="internal" name="Internal Citations" fill="hsl(209 100% 32%)" radius={[4, 4, 0, 0]} stackId="a" cursor="pointer" />
-          <Bar dataKey="external" name="External Citations" fill="hsl(43 85% 55%)" radius={[4, 4, 0, 0]} stackId="a" cursor="pointer" />
+          <Bar dataKey="abstractViews" name="Abstract Views" fill="hsl(209 100% 32%)" radius={[4, 4, 0, 0]} stackId="a" />
+          <Bar dataKey="downloads" name="Downloads" fill="hsl(43 85% 55%)" radius={[4, 4, 0, 0]} stackId="a" />
         </BarChart>
       </ResponsiveContainer>
     </motion.div>
