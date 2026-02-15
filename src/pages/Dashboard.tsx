@@ -1,13 +1,15 @@
-import { BookOpen, Download, FileText, TrendingUp, Users, Clock, CheckCircle, Eye, RefreshCw } from "lucide-react";
+import { BookOpen, Download, FileText, TrendingUp, Users, Clock, CheckCircle, Eye, RefreshCw, Quote } from "lucide-react";
 import KpiCard from "@/components/dashboard/KpiCard";
 import InteractiveWorldMap from "@/components/dashboard/InteractiveWorldMap";
 import CitationChart from "@/components/dashboard/CitationChart";
 import CitationTimeline from "@/components/dashboard/CitationTimeline";
 import TopArticlesTable from "@/components/dashboard/TopArticlesTable";
 import EditorialFunnel from "@/components/dashboard/EditorialFunnel";
+import CitationMetrics from "@/components/dashboard/CitationMetrics";
 import { DashboardSkeleton, ErrorState, DataFreshness, ConnectionBadge } from "@/components/ui/skeletons";
 import { useAllJournalsMetrics, useOJSConnection } from "@/hooks/useOJSData";
 import { useMatomoConnection } from "@/hooks/useMatomoData";
+import { usePublicationCitations, useCrossrefConnection } from "@/hooks/useCrossrefData";
 
 const Dashboard = () => {
   // Fetch real data from OJS standard API (aggregated across all journals)
@@ -23,6 +25,17 @@ const Dashboard = () => {
   // Connection status checks
   const { data: ojsConnection } = useOJSConnection();
   const { data: matomoConnection } = useMatomoConnection();
+  const { data: crossrefConnection } = useCrossrefConnection();
+  
+  // Citation data from Crossref (uses DOIs from OJS publications)
+  const {
+    data: citationSummary,
+    isLoading: citationsLoading,
+    isError: citationsError,
+    error: citationsErrorObj,
+    refetch: refetchCitations,
+    isRefetching: citationsRefetching,
+  } = usePublicationCitations(metrics?.topPublications);
   
   const isConnected = !!metrics && !error;
 
@@ -39,7 +52,7 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold font-heading text-foreground">System Overview</h1>
           <p className="text-sm text-muted-foreground">
             {isConnected ? (
-              <>Aggregated analytics across {metrics.contexts?.length || 0} UDSM journals</>
+              <>Analytics across {metrics.contexts?.length || 0} UDSM scholarly journals</>
             ) : (
               <span className="text-yellow-600">Unable to connect to OJS API</span>
             )}
@@ -68,6 +81,11 @@ const Dashboard = () => {
               connected={matomoConnection?.connected || false} 
               label="Matomo" 
               loading={!matomoConnection}
+            />
+            <ConnectionBadge 
+              connected={crossrefConnection?.connected || false} 
+              label="Crossref" 
+              loading={!crossrefConnection}
             />
           </div>
         </div>
@@ -143,6 +161,37 @@ const Dashboard = () => {
             />
           </div>
 
+          {/* KPI Cards - Citation Metrics (Crossref) */}
+          {citationSummary && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <KpiCard 
+                label="Total Citations" 
+                value={citationSummary.totalCitations} 
+                icon={Quote} 
+                delay={0.4} 
+                accent
+              />
+              <KpiCard 
+                label="h-Index" 
+                value={citationSummary.hIndex} 
+                icon={TrendingUp} 
+                delay={0.45} 
+              />
+              <KpiCard 
+                label="Avg Citations/Article" 
+                value={citationSummary.avgCitationsPerArticle.toFixed(1)} 
+                icon={FileText} 
+                delay={0.5} 
+              />
+              <KpiCard 
+                label="Most Cited Article" 
+                value={citationSummary.maxCitations} 
+                icon={BookOpen} 
+                delay={0.55} 
+              />
+            </div>
+          )}
+
           {/* World Map - Matomo data */}
           <InteractiveWorldMap />
 
@@ -206,6 +255,16 @@ const Dashboard = () => {
 
           {/* Top Articles Table */}
           <TopArticlesTable data={metrics.topPublications} maxItems={10} />
+
+          {/* Crossref Citation Metrics */}
+          <CitationMetrics
+            summary={citationSummary || null}
+            isLoading={citationsLoading}
+            isError={citationsError}
+            error={citationsErrorObj}
+            onRefresh={() => refetchCitations()}
+            isRefreshing={citationsRefetching}
+          />
         </>
       )}
     </div>

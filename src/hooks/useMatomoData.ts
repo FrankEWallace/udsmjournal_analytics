@@ -14,6 +14,9 @@ import {
   getVisitorsByCountry,
   getTopPages,
   getVisitsOverTime,
+  getBrowsers,
+  getDeviceTypes,
+  getReferrerTypes,
   fetchMatomoRealtimeData,
   testMatomoConnection,
 } from '@/services/matomoApi';
@@ -23,6 +26,9 @@ import type {
   MatomoVisitsSummary,
   MatomoCountry,
   MatomoPageView,
+  MatomoBrowser,
+  MatomoDeviceType,
+  MatomoReferrerType,
   MatomoRealtimeData,
   MatomoConnectionResult,
 } from '@/types/matomo';
@@ -40,6 +46,9 @@ export const matomoQueryKeys = {
   countries: (period: string, date: string) => [...matomoQueryKeys.all, 'countries', period, date] as const,
   topPages: (period: string, date: string, limit: number) => [...matomoQueryKeys.all, 'topPages', period, date, limit] as const,
   visitsOverTime: (period: string, date: string) => [...matomoQueryKeys.all, 'visitsOverTime', period, date] as const,
+  browsers: (period: string, date: string) => [...matomoQueryKeys.all, 'browsers', period, date] as const,
+  deviceTypes: (period: string, date: string) => [...matomoQueryKeys.all, 'deviceTypes', period, date] as const,
+  referrerTypes: (period: string, date: string) => [...matomoQueryKeys.all, 'referrerTypes', period, date] as const,
   connection: () => [...matomoQueryKeys.all, 'connection'] as const,
 };
 
@@ -199,6 +208,58 @@ export function useMatomoConnection() {
     refetchInterval: MATOMO_CONFIG.refreshIntervals.connection,
     staleTime: MATOMO_CONFIG.refreshIntervals.connection - 1000,
     retry: 1,
+  });
+}
+
+// ============================================
+// Browser, Device & Referrer Hooks
+// ============================================
+
+/**
+ * Hook for browser statistics
+ */
+export function useMatomoBrowsers(
+  period: string = MATOMO_CONFIG.defaults.period,
+  date: string = MATOMO_CONFIG.defaults.date
+) {
+  return useQuery<MatomoBrowser[], Error>({
+    queryKey: matomoQueryKeys.browsers(period, date),
+    queryFn: () => getBrowsers(period, date),
+    refetchInterval: MATOMO_CONFIG.refreshIntervals.topPages,
+    staleTime: MATOMO_CONFIG.refreshIntervals.topPages - 1000,
+    retry: 2,
+  });
+}
+
+/**
+ * Hook for device type statistics
+ */
+export function useMatomoDeviceTypes(
+  period: string = MATOMO_CONFIG.defaults.period,
+  date: string = MATOMO_CONFIG.defaults.date
+) {
+  return useQuery<MatomoDeviceType[], Error>({
+    queryKey: matomoQueryKeys.deviceTypes(period, date),
+    queryFn: () => getDeviceTypes(period, date),
+    refetchInterval: MATOMO_CONFIG.refreshIntervals.topPages,
+    staleTime: MATOMO_CONFIG.refreshIntervals.topPages - 1000,
+    retry: 2,
+  });
+}
+
+/**
+ * Hook for referrer type statistics
+ */
+export function useMatomoReferrerTypes(
+  period: string = MATOMO_CONFIG.defaults.period,
+  date: string = MATOMO_CONFIG.defaults.date
+) {
+  return useQuery<MatomoReferrerType[], Error>({
+    queryKey: matomoQueryKeys.referrerTypes(period, date),
+    queryFn: () => getReferrerTypes(period, date),
+    refetchInterval: MATOMO_CONFIG.refreshIntervals.topPages,
+    staleTime: MATOMO_CONFIG.refreshIntervals.topPages - 1000,
+    retry: 2,
   });
 }
 

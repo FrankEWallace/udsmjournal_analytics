@@ -36,14 +36,14 @@ export const MATOMO_CONFIG = {
    * Refresh intervals for different data types (in milliseconds)
    */
   refreshIntervals: {
-    liveCounters: 2000,      // 2 seconds - very frequent for live data
-    realtimeVisitors: 3000,  // 3 seconds
-    visitors: 5000,          // 5 seconds
-    countries: 30000,        // 30 seconds
-    summary: 30000,          // 30 seconds
-    topPages: 60000,         // 1 minute
-    visitsOverTime: 60000,   // 1 minute
-    connection: 60000,       // 1 minute - health check
+    liveCounters: 15000,      // 15 seconds - live counters
+    realtimeVisitors: 20000,  // 20 seconds - realtime composite data
+    visitors: 30000,          // 30 seconds - recent visitors list
+    countries: 60000,         // 60 seconds
+    summary: 60000,           // 60 seconds
+    topPages: 120000,         // 2 minutes
+    visitsOverTime: 120000,   // 2 minutes
+    connection: 60000,        // 1 minute - health check
   },
   
   /**
@@ -75,6 +75,13 @@ export const MATOMO_METHODS = {
   
   // Actions module - page views
   topPages: 'Actions.getPageUrls',
+  
+  // DevicesDetection module - browser & device data
+  browsers: 'DevicesDetection.getBrowsers',
+  deviceTypes: 'DevicesDetection.getType',
+  
+  // Referrers module - traffic sources
+  referrerTypes: 'Referrers.getReferrerType',
   
   // API module - system info
   matomoVersion: 'API.getMatomoVersion',

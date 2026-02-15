@@ -220,6 +220,56 @@ export interface MatomoPageView {
 }
 
 // ============================================
+// DevicesDetection Module Types
+// ============================================
+
+/**
+ * Browser statistics from DevicesDetection.getBrowsers
+ */
+export interface MatomoBrowser {
+  label: string;
+  nb_visits: number;
+  nb_actions: number;
+  max_actions: number;
+  sum_visit_length: number;
+  bounce_count: number;
+  nb_visits_converted: number;
+  sum_daily_nb_uniq_visitors: number;
+  logo: string;
+  segment: string;
+}
+
+/**
+ * Device type statistics from DevicesDetection.getType
+ */
+export interface MatomoDeviceType {
+  label: string;
+  nb_visits: number;
+  nb_actions?: number;
+  max_actions?: number;
+  sum_visit_length?: number;
+  bounce_count?: number;
+  segment: string;
+  logo: string;
+}
+
+/**
+ * Referrer type statistics from Referrers.getReferrerType
+ */
+export interface MatomoReferrerType {
+  label: string;
+  nb_visits: number;
+  nb_actions: number;
+  max_actions: number;
+  sum_visit_length: number;
+  bounce_count: number;
+  nb_visits_converted: number;
+  sum_daily_nb_uniq_visitors: number;
+  referrer_type: number;
+  segment: string;
+}
+
+// ============================================
 // Aggregated/Dashboard Types
 // ============================================
 

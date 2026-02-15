@@ -12,6 +12,9 @@ import type {
   MatomoVisitsSummary,
   MatomoCountry,
   MatomoPageView,
+  MatomoBrowser,
+  MatomoDeviceType,
+  MatomoReferrerType,
   MatomoRealtimeData,
   MatomoCountryAggregated,
   MatomoRecentAction,
@@ -28,7 +31,16 @@ import type {
  * Build Matomo API URL with parameters
  */
 function buildMatomoUrl(method: string, params: Record<string, string | number> = {}): string {
-  const url = new URL(`${MATOMO_CONFIG.baseUrl}/`);
+  const base = MATOMO_CONFIG.baseUrl;
+  
+  // Build URL - handle both relative proxy paths and absolute URLs
+  let url: URL;
+  if (base.startsWith('http')) {
+    url = new URL(`${base}/`);
+  } else {
+    // Relative path (e.g. /matomo-api) — use window.location.origin as base
+    url = new URL(`${base}/`, window.location.origin);
+  }
   
   const allParams = {
     module: 'API',
@@ -177,12 +189,35 @@ export async function getVisitorsByCountry(
   period: string = MATOMO_CONFIG.defaults.period,
   date: string = MATOMO_CONFIG.defaults.date
 ): Promise<MatomoCountry[]> {
-  const data = await matomoFetch<MatomoCountry[]>(
+  const data = await matomoFetch<MatomoCountry[] | Record<string, MatomoCountry[]>>(
     MATOMO_METHODS.visitorsByCountry,
     { period, date }
   );
   
-  return Array.isArray(data) ? data : [];
+  // If the response is already a flat array, return directly
+  if (Array.isArray(data)) return data;
+  
+  // For multi-period requests (e.g. date=previous12), Matomo returns
+  // { "2025-01": [...], "2025-02": [...] }. Aggregate by country code.
+  if (data && typeof data === 'object') {
+    const aggregated = new Map<string, MatomoCountry>();
+    for (const periodEntries of Object.values(data)) {
+      if (!Array.isArray(periodEntries)) continue;
+      for (const entry of periodEntries) {
+        const existing = aggregated.get(entry.code);
+        if (existing) {
+          existing.nb_visits += entry.nb_visits;
+          existing.nb_actions = (existing.nb_actions || 0) + (entry.nb_actions || 0);
+          existing.nb_uniq_visitors = Math.max(existing.nb_uniq_visitors || 0, entry.nb_uniq_visitors || 0);
+        } else {
+          aggregated.set(entry.code, { ...entry });
+        }
+      }
+    }
+    return Array.from(aggregated.values()).sort((a, b) => b.nb_visits - a.nb_visits);
+  }
+  
+  return [];
 }
 
 // ============================================
@@ -246,6 +281,52 @@ export async function getVisitsOverTime(
   }
   
   return result;
+}
+
+// ============================================
+// DevicesDetection & Referrers Functions
+// ============================================
+
+/**
+ * Get browser statistics
+ */
+export async function getBrowsers(
+  period: string = MATOMO_CONFIG.defaults.period,
+  date: string = MATOMO_CONFIG.defaults.date
+): Promise<MatomoBrowser[]> {
+  const data = await matomoFetch<MatomoBrowser[]>(
+    MATOMO_METHODS.browsers,
+    { period, date }
+  );
+  return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Get device type statistics
+ */
+export async function getDeviceTypes(
+  period: string = MATOMO_CONFIG.defaults.period,
+  date: string = MATOMO_CONFIG.defaults.date
+): Promise<MatomoDeviceType[]> {
+  const data = await matomoFetch<MatomoDeviceType[]>(
+    MATOMO_METHODS.deviceTypes,
+    { period, date }
+  );
+  return Array.isArray(data) ? data.filter(d => d.nb_visits > 0) : [];
+}
+
+/**
+ * Get referrer type statistics
+ */
+export async function getReferrerTypes(
+  period: string = MATOMO_CONFIG.defaults.period,
+  date: string = MATOMO_CONFIG.defaults.date
+): Promise<MatomoReferrerType[]> {
+  const data = await matomoFetch<MatomoReferrerType[]>(
+    MATOMO_METHODS.referrerTypes,
+    { period, date }
+  );
+  return Array.isArray(data) ? data : [];
 }
 
 // ============================================

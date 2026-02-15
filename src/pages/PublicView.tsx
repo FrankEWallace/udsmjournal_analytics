@@ -35,7 +35,7 @@ const PublicView = () => {
             <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="hsl(213 15% 50%)" />
             <YAxis tick={{ fontSize: 12 }} stroke="hsl(213 15% 50%)" />
             <Tooltip contentStyle={{ background: "hsl(0 0% 100%)", border: "1px solid hsl(214 20% 90%)", borderRadius: "8px", fontSize: "12px" }} />
-            <Area type="monotone" dataKey="internal" stroke="hsl(209 100% 32%)" fill="hsl(209 100% 32% / 0.15)" strokeWidth={2} />
+            <Area type="monotone" dataKey="internal" stroke="#2A6EBB" fill="rgba(42,110,187,0.15)" strokeWidth={2} />
             <Area type="monotone" dataKey="external" stroke="hsl(43 85% 55%)" fill="hsl(43 85% 55% / 0.15)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>

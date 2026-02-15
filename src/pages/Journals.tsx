@@ -1,31 +1,37 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, Download, GitBranch, ExternalLink, RefreshCw } from "lucide-react";
-import { journals } from "@/lib/mock-data";
-import { useFastStatsDashboard } from "@/hooks/useOJSData";
+import { ArrowRight, BookOpen, Download, Eye, FileText, Users, RefreshCw, CheckCircle, Clock } from "lucide-react";
+import { useAllJournalsMetrics, useOJSConnection } from "@/hooks/useOJSData";
 import { KpiCardSkeleton, ConnectionBadge } from "@/components/ui/skeletons";
 
 const Journals = () => {
   const navigate = useNavigate();
   
-  // Fetch real journal data from Fast Stats API
-  const { data: dashboardData, isLoading, isRefetching, error } = useFastStatsDashboard();
+  // Fetch real data aggregated across all journals
+  const { data: allMetrics, isLoading, isRefetching, error, refetch } = useAllJournalsMetrics();
+  const { data: ojsConnection } = useOJSConnection();
   
-  // Transform API data or fall back to mock data
-  const journalList = dashboardData?.journals && dashboardData.journals.length > 0
-    ? dashboardData.journals.map((j, idx) => ({
-        id: j.path || `journal-${idx + 1}`,
-        name: j.name,
-        abbr: j.acronym || j.path?.toUpperCase().slice(0, 4) || `J${idx + 1}`,
-        papers: j.publishedArticles || 0,
-        downloads: (j.totalAbstractViews || 0) + (j.totalFileDownloads || 0),
-        internalCitations: 0, // Not available in FastStatsJournalStats
-        externalCitations: 0, // Not available in FastStatsJournalStats  
-        growth: 0, // Not available in FastStatsJournalStats
-      }))
-    : journals;
-  
-  const isUsingMockData = !dashboardData?.journals || dashboardData.journals.length === 0;
+  // Build journal list from real API contexts + per-context metrics
+  const journalList = (allMetrics?.contexts || []).map((ctx) => {
+    const metrics = allMetrics?.perContextMetrics?.get(ctx.urlPath);
+    const name = ctx.name['en_US'] || ctx.name['en'] || Object.values(ctx.name)[0] || ctx.urlPath;
+    const acronym = ctx.acronym?.['en_US'] || ctx.acronym?.['en'] || ctx.urlPath.toUpperCase();
+    return {
+      id: ctx.urlPath,
+      name,
+      abbr: acronym,
+      papers: metrics?.totalPublications || 0,
+      abstractViews: metrics?.totalAbstractViews || 0,
+      downloads: metrics?.totalDownloads || 0,
+      totalUsers: metrics?.totalUsers || 0,
+      acceptanceRate: metrics?.acceptanceRate || 0,
+      daysToDecision: metrics?.daysToDecision || 0,
+      submissionsReceived: metrics?.submissionsReceived || 0,
+      enabled: ctx.enabled,
+    };
+  });
+
+  const isConnected = !!allMetrics && !error;
 
   return (
     <div className="space-y-6">
@@ -35,21 +41,45 @@ const Journals = () => {
             Journals
             {isRefetching && <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />}
           </h1>
-          <p className="text-sm text-muted-foreground">Browse and analyze individual journal performance</p>
+          <p className="text-sm text-muted-foreground">
+            {isConnected
+              ? `Browse and analyze ${journalList.length} journal${journalList.length !== 1 ? 's' : ''} from OJS`
+              : 'Browse and analyze individual journal performance'}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3 w-3 ${isRefetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
           <ConnectionBadge 
-            connected={!error && !isUsingMockData} 
-            label={isUsingMockData ? "Demo Mode" : "API Connected"} 
+            connected={ojsConnection?.connected || false} 
+            label={isConnected ? "OJS Live" : "OJS"} 
+            loading={!ojsConnection}
           />
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-sm text-destructive">{error.message || 'Failed to fetch journal data from OJS API'}</p>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <KpiCardSkeleton key={i} />
           ))}
+        </div>
+      ) : journalList.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card p-12 text-center">
+          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
+          <p className="text-muted-foreground">No journals found. Check your OJS API connection.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -76,21 +106,28 @@ const Journals = () => {
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <BookOpen className="h-3 w-3" /> {journal.papers} papers
+                  <FileText className="h-3 w-3" /> {journal.papers.toLocaleString()} articles
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Download className="h-3 w-3" /> {journal.downloads.toLocaleString()}
+                  <Eye className="h-3 w-3" /> {journal.abstractViews.toLocaleString()} views
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <GitBranch className="h-3 w-3" /> {journal.internalCitations} internal
+                  <Download className="h-3 w-3" /> {journal.downloads.toLocaleString()} downloads
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <ExternalLink className="h-3 w-3" /> {journal.externalCitations} external
+                  <Users className="h-3 w-3" /> {journal.totalUsers.toLocaleString()} users
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center gap-1 text-xs font-medium text-success">
-                <span>+{journal.growth}% growth</span>
+              <div className="mt-3 flex items-center gap-3 text-[11px]">
+                <span className="flex items-center gap-1 text-emerald-600">
+                  <CheckCircle className="h-3 w-3" /> {journal.acceptanceRate}% accepted
+                </span>
+                {journal.daysToDecision > 0 && (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Clock className="h-3 w-3" /> {journal.daysToDecision}d avg
+                  </span>
+                )}
               </div>
             </motion.div>
           ))}

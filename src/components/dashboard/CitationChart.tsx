@@ -64,7 +64,7 @@ const CitationChart = ({ data }: CitationChartProps) => {
             }}
           />
           <Legend wrapperStyle={{ fontSize: "12px" }} />
-          <Bar dataKey="abstractViews" name="Abstract Views" fill="hsl(209 100% 32%)" radius={[4, 4, 0, 0]} stackId="a" />
+          <Bar dataKey="abstractViews" name="Abstract Views" fill="#2A6EBB" radius={[4, 4, 0, 0]} stackId="a" />
           <Bar dataKey="downloads" name="Downloads" fill="hsl(43 85% 55%)" radius={[4, 4, 0, 0]} stackId="a" />
         </BarChart>
       </ResponsiveContainer>
