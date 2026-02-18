@@ -6,12 +6,12 @@ A comprehensive analytics dashboard for monitoring research impact, citations, a
 
 ## Features
 
-- 📊 **Dashboard** — System-wide KPIs, world map, editorial funnel, top articles
-- 📖 **Journals** — Per-journal metrics (publications, views, downloads, editorial stats)
-- ⚖️ **Comparison** — Side-by-side journal comparison with radar, bar, and timeline charts
-- 🔴 **Live Engagement** — Real-time visitor analytics powered by Matomo
-- 🌍 **Public View** — Embeddable public-facing journal metrics
-- ⚙️ **System Settings** — Configuration and API connection management
+-  **Dashboard** — System-wide KPIs, world map, editorial funnel, top articles
+-  **Journals** — Per-journal metrics (publications, views, downloads, editorial stats)
+-  **Comparison** — Side-by-side journal comparison with radar, bar, and timeline charts
+-  **Live Engagement** — Real-time visitor analytics powered by Matomo
+-  **Public View** — Embeddable public-facing journal metrics
+-  **System Settings** — Configuration and API connection management
 
 ## Tech Stack
 
